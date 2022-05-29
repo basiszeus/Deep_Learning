@@ -1,0 +1,168 @@
+import tensorflow as tf
+from tensorflow import keras
+import matplotlib as plt
+%matplotlib inline
+import numpy as np
+
+
+#We will use handwritten dataset from Keras library
+keras.datasets.mnist.load_data()
+
+#Load the train and test data from the data set :
+(X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()
+len(X_train)
+len(X_test)
+
+#Shape of the sample
+X_train[0].shape
+
+X_train[0]
+
+plt.pyplot.matshow(X_train[0])
+#Look like 5
+y_train[0]
+
+
+
+# Flatten the dataset
+
+X_train_F = X_train.reshape(len(X_train),28*28)
+X_test_F = X_test.reshape(len(X_test),28*28)
+X_train_F .shape
+
+#Model
+## ANN
+
+model = keras.Sequential([
+    keras.layers.Dense(10, input_shape=(784,),activation= 'sigmoid')
+])
+
+#Dense mean that all the neuron in the first layer are connected to all the other in the 2nd layer
+#784 are the Xi
+#10 is the output
+#sigmoid is the activation function
+
+model.compile(optimizer ='adam',
+              loss = "sparse_categorical_crossentropy",
+              metrics = ['accuracy'])
+model.fit(X_train_F,y_train,epochs=7)
+              
+# Optimizer Is used for better precision 
+# Loss is the loss function 
+# metrics is the objective of the optimization, in our case, to make it more accurate 
+# epoches is the number of iteration
+
+# Note
+
+If you have poor precision, you need to scale your values
+
+. X_train = X_train/255
+. X_test = X_test/255
+Your array, the value would be between 0 and 1
+
+X_train = X_train/255
+X_test = X_test/255
+
+X_train_F = X_train.reshape(len(X_train),28*28)
+X_test_F = X_test.reshape(len(X_test),28*28)
+
+X_train_F = X_train.reshape(len(X_train),28*28)
+X_test_F = X_test.reshape(len(X_test),28*28)
+model = keras.Sequential([
+    keras.layers.Dense(10, input_shape=(784,),activation= 'sigmoid')
+])
+
+model.compile(optimizer ='adam',
+              loss = "sparse_categorical_crossentropy",
+              metrics = ['accuracy'])
+model.fit(X_train_F,y_train,epochs=7)
+
+model.evaluate(X_test_F,y_test)
+
+
+
+#Prediction :
+
+plt.pyplot.matshow(X_test[5])
+prediction = model.predict(X_test_F)
+prediction[5]
+#To find the max value
+np.argmax(prediction[5])
+
+
+
+#Confusion Matrix in TF : 
+
+#convert prediction into a list to match with y_test
+prediction_c = [np.argmax(i) for i in prediction]
+# We will find the max probability in each value in prediction and stored into a list
+
+cm = tf.math.confusion_matrix(labels = y_test,predictions = prediction_c)
+
+import seaborn as sns
+
+sns.heatmap(
+    cm,
+    cmap="flare",
+    annot=True,
+    fmt='d',   
+)
+
+# The seaborn heatmap fmt help to show annot with different formatting.
+
+
+
+# Hidden Layer
+
+model = keras.Sequential([
+    keras.layers.Dense(50, input_shape=(784,),activation= 'relu'),
+    keras.layers.Dense(10,activation= 'sigmoid')
+])
+
+model.compile(optimizer ='adam',
+              loss = "sparse_categorical_crossentropy",
+              metrics = ['accuracy'])
+model.fit(X_train_F,y_train,epochs=7)
+
+#The hidden layer (2row) does not need input_shape
+#We will change the 10 value because we will be not connected to the output but to the hidden layer.
+#50 isthe number of hidden layer wich is here less thant the inputs 784
+#We changed the activation fucntion to relu
+#You can add more hidden layer
+#Evaluate now the test set not the training
+model.evaluate(X_test_F,y_test)
+
+prediction = model.predict(X_test_F)
+prediction_c = [np.argmax(i) for i in prediction]
+
+cm = tf.math.confusion_matrix(labels = y_test,predictions = prediction_c)
+
+sns.heatmap(
+    cm,
+    cmap="flare",
+    annot=True,
+    fmt='d',   
+)
+
+
+
+# Without Flatten Arrays :
+
+model = keras.Sequential([
+    keras.layers.Flatten(input_shape=(28,28)),
+    keras.layers.Dense(50,activation= 'relu'),
+    keras.layers.Dense(10,activation= 'sigmoid')
+])
+
+model.compile(optimizer ='adam',
+              loss = "sparse_categorical_crossentropy",
+              metrics = ['accuracy'])
+model.fit(X_train,y_train,epochs=7)
+
+
+
+
+
+
+
+
