@@ -1,0 +1,161 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+#Tools :
+
+import numpy as np
+import tensorflow as tf
+from tensorflow import keras
+import pandas as pd
+from matplotlib import pyplot as plt
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+df = pd.read_csv("LG_work_Senior tech lead.csv")
+df.head()
+
+
+# We will use in an example that predicts if the candidate will be selected for the position of "Senior Tech lead" at LG.
+# The classification is based on 2 independent variables (age and qualifications)
+# Qualification: 0 = he is not qualified, 1 = he is qualified
+# The depending variable will be admission which can take the form of 0 or 1 depending on age and qualifications.
+
+# # Note
+
+# We have to scale the data because the age can take a value between 18 to 70 while the qualifications between 0 and 1.
+
+
+# # Split train and test set
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(df[['Age','Qualification for the job']],
+                                                    df.Admission,test_size=0.3, random_state=25)
+
+
+# # Scaling the data
+
+# - We are going to divide the age by 100 in order to have values close to the qualifications (0 and 1)
+# - We will apply the transformation for the training and testing sample
+
+
+X_train_scaled = X_train.copy()
+X_train_scaled['Age'] = X_train_scaled['Age'] / 100
+X_test_scaled = X_test.copy()
+X_test_scaled['Age'] = X_test_scaled['Age'] / 100
+X_train_scaled
+
+
+# # Creating ANN
+
+model = keras.Sequential([
+    keras.layers.Dense(1, input_shape=(2,), activation = 'sigmoid', 
+                       kernel_initializer='ones', bias_initializer="zeros")
+    
+])
+
+#Output is one
+# 1 Layer
+# 2 neurons as inputs
+#w = 1
+#B = 0
+
+model.compile(optimizer='adam',
+             loss ='binary_crossentropy',
+             metrics =['accuracy'])
+
+model.fit(X_train_scaled,y_train,epochs = 4000 )
+
+
+# ## Evaluate the model on the test set
+
+model.evaluate(X_test_scaled,y_test)
+# Bad accuarcy
+model.predict(X_test_scaled)
+
+
+# # Parameters
+
+w,b = model.get_weights()
+w,b
+
+
+# # Building NN from scratch without TF
+
+# ## Sigmoid
+
+import math
+
+def sigmoid_numpy(X):
+   return 1/(1+np.exp(-X))
+#This function take an array of value, have only one value, and we needed for GD
+
+
+# ## Prediction function
+
+def prediction_function(age,qualifications):
+    weighted_sum = w[0]*age+w[1]*qualifications+b
+    return sigmoid_numpy(weighted_sum)
+
+
+# testing the prediction function on Joe 44 years old with good qualifications
+
+prediction_function(0.44,1)
+if prediction_function(0.44,1) > 0.5 :
+    print("Congratulations Joe, welcome to LG","with", prediction_function(0.44,1)*100)
+
+
+# ## Gradient Descent
+
+# - Loss function
+
+def log_loss(y_true, y_predicted):
+    epsilon = 1e-10
+    y_predicted_new = [max(i,epsilon) for i in y_predicted]
+    y_predicted_new = [min(i,1-epsilon) for i in y_predicted_new]
+    y_predicted_new = np.array(y_predicted_new)
+    return -np.mean(y_true*np.log(y_predicted_new)+(1-y_true)*np.log(1-y_predicted_new))
+
+
+# - Gradient Descent
+
+def gradient_descent(Age,Qualifications , y_true, epochs, loss_thresold):
+# loss_thresold: we will use it to limit our epochs at a certain accuracy
+# Age and Qualifications are your independants variables
+# y_true is the output
+    w1 = w2 = 1 # you can choose what you want
+    bias = 0
+    rate = 0.5
+    n = len(Age) #any independant variable you want
+    
+    
+    for i in range(epochs): #in every epoch
+        weighted_sum = w1 * Age + w2 * Qualifications + bias 
+        y_predicted = sigmoid_numpy(weighted_sum)
+        loss = log_loss(y_true, y_predicted) #we calculate the loss after the activation
+
+        w1d = (1/n)*np.dot(np.transpose(Age),(y_predicted-y_true))  #Derivative
+        w2d = (1/n)*np.dot(np.transpose(Qualifications),(y_predicted-y_true))  #Derivative
+        bias_d = np.mean(y_predicted-y_true) #Derivative
+        
+        w1 = w1 - rate * w1d #the new value
+        w2 = w2 - rate * w2d #the new value
+        bias = bias - rate * bias_d #the new value
+
+        print (f'Epoch:{i}, w1:{w1}, w2:{w2}, bias:{bias}, loss:{loss}')
+
+        if loss<=loss_thresold: #break at the thresold
+            break
+
+    return w1, w2, bias
+
+gradient_descent(X_train_scaled['Age'],X_train_scaled['Qualification for the job'],y_train,1000, 0.3165)
+
+w,b = model.get_weights()
+w,b
+
+# We have the same parameters as the gradient descent of Tensorflow
+
+
+
+
+
+
